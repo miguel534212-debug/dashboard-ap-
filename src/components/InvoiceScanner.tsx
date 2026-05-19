@@ -40,6 +40,8 @@ export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
         reader.readAsDataURL(file);
       });
 
+      const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
@@ -50,7 +52,7 @@ export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
               parts: [
                 {
                   inline_data: {
-                    mime_type: file.type,
+                    mime_type: mimeType,
                     data: base64,
                   },
                 },
@@ -87,8 +89,27 @@ This may be a Colombian invoice or an international freight carrier invoice (Mae
         return;
       }
 
-      const text = data.candidates[0].content.parts[0].text;
-      const clean = text.replace(/```json|```/g, '').trim();
+      const candidate = data.candidates?.[0];
+      if (!candidate) {
+        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        setLoading(false);
+        return;
+      }
+
+      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        setLoading(false);
+        return;
+      }
+
+      const text = data.candidates[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        setLoading(false);
+        return;
+      }
+
+      const clean = text.replace(/```json|```|`/g, '').trim();
       const parsed: ScanResult = JSON.parse(clean);
 
       onScan(parsed);
