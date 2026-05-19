@@ -27,7 +27,7 @@ export default function App() {
   const existingVendors = useMemo(() => [...new Set(invoices.map(i => i.vendor))], [invoices]);
 
   const geminiApiKey = useMemo(() => {
-    return localStorage.getItem('gemini_api_key') || 'AIzaSyCYAgyzNJ4mWTiKHV-P37txJAhayEAqyJo';
+    return localStorage.getItem('gemini_api_key') || 'AIzaSyBUEOP9B3sqCWjFIUYXkTmqlYztNhdsSJo';
   }, [showSettings]);
 
   const handleSave = (inv: Invoice) => {
