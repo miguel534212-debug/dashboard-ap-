@@ -26,7 +26,12 @@ export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
 
   const handleFile = async (file: File) => {
     if (!apiKey) {
-      showToast('error', 'Configura tu API key de Gemini en Ajustes');
+      showToast('error', 'Configura tu API key de Mistral en Ajustes');
+      return;
+    }
+
+    if (file.type === 'application/pdf') {
+      showToast('error', 'Mistral no soporta PDFs. Usa imagen (JPG/PNG).');
       return;
     }
 
@@ -40,24 +45,22 @@ export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
         reader.readAsDataURL(file);
       });
 
-      const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      const mimeType = file.type || 'image/jpeg';
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64,
-                  },
-                },
-                {
-                  text: `Extract the following fields from this invoice and return ONLY a valid JSON object, no markdown, no explanation, no backticks:
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'pixtral-12b-2409',
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Extract the following fields from this invoice and return ONLY a valid JSON object, no markdown, no explanation, no backticks:
 {
   "invoiceNumber": "string or null",
   "vendor": "string or null",
@@ -70,41 +73,35 @@ If a field is not found return null.
 For amounts return only the number, no symbols, no dots, no commas.
 For dates convert to YYYY-MM-DD format even if the invoice shows DD/MM/YYYY.
 This may be a Colombian invoice or an international freight carrier invoice (Maersk, MSC, DB Schenker, Avianca Cargo, etc).`,
-                },
-              ],
-            }],
-            generationConfig: {
-              temperature: 0,
-              maxOutputTokens: 500,
-            },
-          }),
-        },
-      );
+              },
+              {
+                type: 'image_url',
+                image_url: `data:${mimeType};base64,${base64}`,
+              },
+            ],
+          }],
+          temperature: 0,
+          max_tokens: 500,
+        }),
+      });
 
       const data = await response.json();
 
       if (data.error) {
-        const msg = data.error.message || 'Error al leer la factura';
+        const msg = data.error.message || JSON.stringify(data.error);
         showToast('error', `${msg}. Completa los campos manualmente.`);
         setLoading(false);
         return;
       }
 
-      const candidate = data.candidates?.[0];
-      if (!candidate) {
+      const choice = data.choices?.[0];
+      if (!choice) {
         showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
         setLoading(false);
         return;
       }
 
-      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-        const reason = candidate.finishReason === 'SAFETY' ? 'La imagen fue bloqueada por seguridad' : 'Error al procesar la factura';
-        showToast('error', `${reason}. Completa los campos manualmente.`);
-        setLoading(false);
-        return;
-      }
-
-      const text = candidate?.content?.parts?.[0]?.text;
+      const text = choice.message?.content;
       if (!text) {
         showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
         setLoading(false);
