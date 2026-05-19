@@ -84,7 +84,8 @@ This may be a Colombian invoice or an international freight carrier invoice (Mae
       const data = await response.json();
 
       if (data.error) {
-        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        const msg = data.error.message || 'Error al leer la factura';
+        showToast('error', `${msg}. Completa los campos manualmente.`);
         setLoading(false);
         return;
       }
@@ -97,12 +98,13 @@ This may be a Colombian invoice or an international freight carrier invoice (Mae
       }
 
       if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        const reason = candidate.finishReason === 'SAFETY' ? 'La imagen fue bloqueada por seguridad' : 'Error al procesar la factura';
+        showToast('error', `${reason}. Completa los campos manualmente.`);
         setLoading(false);
         return;
       }
 
-      const text = data.candidates[0]?.content?.parts?.[0]?.text;
+      const text = candidate?.content?.parts?.[0]?.text;
       if (!text) {
         showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
         setLoading(false);
@@ -114,8 +116,9 @@ This may be a Colombian invoice or an international freight carrier invoice (Mae
 
       onScan(parsed);
       showToast('success', 'Factura leída correctamente');
-    } catch {
-      showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : '';
+      showToast('error', `Error al leer la factura${errMsg ? ': ' + errMsg : ''}. Completa los campos manualmente.`);
     } finally {
       setLoading(false);
     }
