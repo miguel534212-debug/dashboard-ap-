@@ -52,7 +52,7 @@ export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
           'X-Title': 'BOC AP Dashboard',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+          model: 'google/gemini-2.0-flash-lite:free',
           messages: [{
             role: 'user',
             content: [
