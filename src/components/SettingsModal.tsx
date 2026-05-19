@@ -5,7 +5,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const STORAGE_KEY = 'mistral_api_key';
+const STORAGE_KEY = 'gemini_api_key';
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const [apiKey, setApiKey] = useState('');
@@ -39,15 +39,15 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-gray-300 text-sm font-medium mb-1">Mistral AI API Key</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Google Gemini API Key</label>
             <input
               type="password"
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
-              placeholder="Ingresa tu API key de Mistral"
+              placeholder="AIza..."
               className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 font-mono"
             />
-            <p className="text-gray-500 text-xs mt-1">Obtén tu key gratis en console.mistral.ai</p>
+            <p className="text-gray-500 text-xs mt-1">Obtén tu key gratis en aistudio.google.com</p>
           </div>
           <div className="flex justify-between items-center pt-2">
             <button type="button" onClick={handleClear} className="px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors">

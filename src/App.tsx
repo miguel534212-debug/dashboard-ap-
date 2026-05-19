@@ -26,8 +26,8 @@ export default function App() {
   const vendorStats = useMemo(() => computeVendorStats(invoices), [invoices]);
   const existingVendors = useMemo(() => [...new Set(invoices.map(i => i.vendor))], [invoices]);
 
-  const mistralApiKey = useMemo(() => {
-    return localStorage.getItem('mistral_api_key') || '';
+  const geminiApiKey = useMemo(() => {
+    return localStorage.getItem('gemini_api_key') || 'AIzaSyCYAgyzNJ4mWTiKHV-P37txJAhayEAqyJo';
   }, [showSettings]);
 
   const handleSave = (inv: Invoice) => {
@@ -104,7 +104,7 @@ export default function App() {
         open={showModal}
         editingInvoice={editingInvoice}
         existingVendors={existingVendors}
-        geminiApiKey={mistralApiKey}
+        geminiApiKey={geminiApiKey}
         onClose={() => { setShowModal(false); setEditingInvoice(null); }}
         onSave={handleSave}
       />
