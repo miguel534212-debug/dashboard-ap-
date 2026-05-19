@@ -26,10 +26,6 @@ export default function App() {
   const vendorStats = useMemo(() => computeVendorStats(invoices), [invoices]);
   const existingVendors = useMemo(() => [...new Set(invoices.map(i => i.vendor))], [invoices]);
 
-  const openrouterApiKey = useMemo(() => {
-    return localStorage.getItem('openrouter_api_key') || '';
-  }, [showSettings]);
-
   const handleSave = (inv: Invoice) => {
     if (editingInvoice) updateInvoice(inv);
     else addInvoice(inv);
@@ -104,7 +100,6 @@ export default function App() {
         open={showModal}
         editingInvoice={editingInvoice}
         existingVendors={existingVendors}
-        geminiApiKey={openrouterApiKey}
         onClose={() => { setShowModal(false); setEditingInvoice(null); }}
         onSave={handleSave}
       />

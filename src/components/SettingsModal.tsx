@@ -1,32 +1,10 @@
-import { useState, useEffect } from 'react';
-
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const STORAGE_KEY = 'openrouter_api_key';
-
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const [apiKey, setApiKey] = useState('');
-
-  useEffect(() => {
-    if (open) {
-      setApiKey(localStorage.getItem(STORAGE_KEY) || '');
-    }
-  }, [open]);
-
   if (!open) return null;
-
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, apiKey);
-    onClose();
-  };
-
-  const handleClear = () => {
-    setApiKey('');
-    localStorage.removeItem(STORAGE_KEY);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -38,27 +16,19 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           </button>
         </div>
         <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-1">OpenRouter API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder="sk-or-v1-..."
-              className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 font-mono"
-            />
-            <p className="text-gray-500 text-xs mt-1">Obtén tu key gratis en openrouter.ai/keys</p>
-          </div>
-          <div className="flex justify-between items-center pt-2">
-            <button type="button" onClick={handleClear} className="px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors">
-              Limpiar key
-            </button>
-            <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancelar</button>
-              <button type="button" onClick={handleSave} className="px-5 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-medium rounded-lg transition-colors">
-                Guardar
-              </button>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              OCR Local — Sin API Key
             </div>
+            <p className="text-gray-400 text-xs">
+              El escáner ahora usa Tesseract.js OCR directamente en el navegador. No necesitas API keys externas, no hay límites de cuota, y es 100% gratuito.
+            </p>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button type="button" onClick={onClose} className="px-5 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-medium rounded-lg transition-colors">
+              Cerrar
+            </button>
           </div>
         </div>
       </div>

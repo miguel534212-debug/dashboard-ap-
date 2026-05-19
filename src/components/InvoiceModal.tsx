@@ -8,7 +8,6 @@ interface InvoiceModalProps {
   open: boolean;
   editingInvoice: Invoice | null;
   existingVendors: string[];
-  geminiApiKey: string;
   onClose: () => void;
   onSave: (inv: Invoice) => void;
 }
@@ -16,7 +15,7 @@ interface InvoiceModalProps {
 const categories: Category[] = ['Ocean Freight', 'Air Freight', 'Customs', 'Trucking', 'Storage', 'Other'];
 const statuses: Status[] = ['Pending', 'Approved', 'Paid'];
 
-export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiKey, onClose, onSave }: InvoiceModalProps) {
+export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, onSave }: InvoiceModalProps) {
   const [vendor, setVendor] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [issueDate, setIssueDate] = useState('');
@@ -111,7 +110,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!editingInvoice && (
-            <InvoiceScanner apiKey={geminiApiKey} onScan={handleScan} />
+            <InvoiceScanner onScan={handleScan} />
           )}
 
           <div className="relative">
@@ -168,7 +167,6 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
               <select value={currency} onChange={e => setCurrency(e.target.value as Currency)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]">
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
-                <option value="COP">COP</option>
               </select>
             </div>
           </div>

@@ -13,7 +13,6 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
   const config: Record<Currency, { locale: string; currency: string; digits: number }> = {
     USD: { locale: 'en-US', currency: 'USD', digits: 2 },
     EUR: { locale: 'de-DE', currency: 'EUR', digits: 2 },
-    COP: { locale: 'es-CO', currency: 'COP', digits: 0 },
   };
   const c = config[currency];
   return new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.currency, minimumFractionDigits: c.digits }).format(amount);

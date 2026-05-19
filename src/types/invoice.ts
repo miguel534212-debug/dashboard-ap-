@@ -1,4 +1,4 @@
-export type Currency = 'USD' | 'EUR' | 'COP';
+export type Currency = 'USD' | 'EUR';
 
 export interface Invoice {
   id: string;
