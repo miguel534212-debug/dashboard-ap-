@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Invoice, Status, Category } from '../types/invoice';
 import { generateId } from '../utils/calculations';
+import { InvoiceScanner } from './InvoiceScanner';
+import type { ScanResult } from './InvoiceScanner';
 
 interface InvoiceModalProps {
   open: boolean;
   editingInvoice: Invoice | null;
   existingVendors: string[];
+  geminiApiKey: string;
   onClose: () => void;
   onSave: (inv: Invoice) => void;
 }
@@ -13,7 +16,7 @@ interface InvoiceModalProps {
 const categories: Category[] = ['Ocean Freight', 'Air Freight', 'Customs', 'Trucking', 'Storage', 'Other'];
 const statuses: Status[] = ['Pending', 'Approved', 'Paid'];
 
-export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, onSave }: InvoiceModalProps) {
+export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiKey, onClose, onSave }: InvoiceModalProps) {
   const [vendor, setVendor] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [issueDate, setIssueDate] = useState('');
@@ -24,6 +27,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   const [notes, setNotes] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [scannedFields, setScannedFields] = useState<Set<string>>(new Set());
 
   const filteredVendors = useMemo(() => {
     if (!vendorSearch) return existingVendors;
@@ -52,7 +56,18 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setNotes('');
       setVendorSearch('');
     }
+    setScannedFields(new Set());
   }, [editingInvoice, open]);
+
+  const handleScan = (data: ScanResult) => {
+    const filled = new Set<string>();
+    if (data.invoiceNumber) { setInvoiceNumber(data.invoiceNumber); filled.add('invoiceNumber'); }
+    if (data.vendor) { setVendor(data.vendor); setVendorSearch(data.vendor); filled.add('vendor'); }
+    if (data.issueDate) { setIssueDate(data.issueDate); filled.add('issueDate'); }
+    if (data.dueDate) { setDueDate(data.dueDate); filled.add('dueDate'); }
+    if (data.amount) { setAmount(String(data.amount)); filled.add('amount'); }
+    setScannedFields(filled);
+  };
 
   if (!open) return null;
 
@@ -75,6 +90,11 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
     onSave(inv);
   };
 
+  const inputClass = (field: string) =>
+    `w-full bg-[#0F172A] border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 ${
+      scannedFields.has(field) ? 'border-[#3B82F6] ring-1 ring-[#3B82F6]/30' : 'border-gray-600'
+    }`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-[#1E293B] border border-gray-700/50 rounded-xl w-full max-w-lg mx-4 shadow-2xl">
@@ -85,13 +105,17 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {!editingInvoice && (
+            <InvoiceScanner apiKey={geminiApiKey} onScan={handleScan} />
+          )}
+
           <div className="relative">
             <label className="block text-gray-300 text-sm font-medium mb-1">Proveedor *</label>
             <input
               type="text" value={vendorSearch} onChange={e => { setVendorSearch(e.target.value); setVendor(e.target.value); setShowDropdown(true); }}
               onFocus={() => setShowDropdown(true)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-              className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500"
+              className={inputClass('vendor')}
               placeholder="Buscar o escribir proveedor..." required
             />
             {showDropdown && filteredVendors.length > 0 && (
@@ -108,7 +132,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">N° Factura *</label>
-              <input type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]" required />
+              <input type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} className={inputClass('invoiceNumber')} required />
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">Categoría</label>
@@ -121,18 +145,18 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">Fecha Emisión *</label>
-              <input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]" required />
+              <input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} className={inputClass('issueDate')} required />
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">Fecha Vencimiento *</label>
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]" required />
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputClass('dueDate')} required />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">Valor (COP) *</label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]" min="0" step="1000" required />
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className={inputClass('amount')} min="0" step="1000" required />
             </div>
             {!editingInvoice && (
               <div>

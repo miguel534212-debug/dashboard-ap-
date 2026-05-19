@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { KPICards } from './components/KPICards';
 import { InvoiceTable } from './components/InvoiceTable';
 import { InvoiceModal } from './components/InvoiceModal';
+import { SettingsModal } from './components/SettingsModal';
 import { AgingReport } from './components/AgingReport';
 import { Charts } from './components/Charts';
 import { VendorList } from './components/VendorList';
@@ -10,8 +11,11 @@ import { useInvoices } from './hooks/useInvoices';
 import { computeKPI, computeAging, computeVendorStats } from './utils/calculations';
 import type { View, Invoice } from './types/invoice';
 
+const DEFAULT_API_KEY = 'AIzaSyCYAgyzNJ4mWTiKHV-P37txJAhayEAqyJo';
+
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
     invoices, filteredInvoices, filters, setFilters,
@@ -23,6 +27,10 @@ export default function App() {
   const agingBuckets = useMemo(() => computeAging(invoices), [invoices]);
   const vendorStats = useMemo(() => computeVendorStats(invoices), [invoices]);
   const existingVendors = useMemo(() => [...new Set(invoices.map(i => i.vendor))], [invoices]);
+
+  const geminiApiKey = useMemo(() => {
+    return localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
+  }, [showSettings]);
 
   const handleSave = (inv: Invoice) => {
     if (editingInvoice) updateInvoice(inv);
@@ -43,7 +51,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#0F172A]">
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} onSettingsClick={() => setShowSettings(true)} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 max-w-7xl mx-auto">
           {currentView === 'dashboard' && (
@@ -98,8 +106,14 @@ export default function App() {
         open={showModal}
         editingInvoice={editingInvoice}
         existingVendors={existingVendors}
+        geminiApiKey={geminiApiKey}
         onClose={() => { setShowModal(false); setEditingInvoice(null); }}
         onSave={handleSave}
+      />
+
+      <SettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
       />
     </div>
   );

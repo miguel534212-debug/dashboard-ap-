@@ -1,0 +1,156 @@
+import { useRef, useState } from 'react';
+
+export interface ScanResult {
+  invoiceNumber: string | null;
+  vendor: string | null;
+  issueDate: string | null;
+  dueDate: string | null;
+  amount: number | null;
+  currency: string | null;
+}
+
+interface InvoiceScannerProps {
+  apiKey: string;
+  onScan: (data: ScanResult) => void;
+}
+
+export function InvoiceScanner({ apiKey, onScan }: InvoiceScannerProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleFile = async (file: File) => {
+    if (!apiKey) {
+      showToast('error', 'Configura tu API key de Gemini en Ajustes');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result!.toString().split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                {
+                  inline_data: {
+                    mime_type: file.type,
+                    data: base64,
+                  },
+                },
+                {
+                  text: `Extract the following fields from this invoice and return ONLY a valid JSON object, no markdown, no explanation, no backticks:
+{
+  "invoiceNumber": "string or null",
+  "vendor": "string or null",
+  "issueDate": "YYYY-MM-DD or null",
+  "dueDate": "YYYY-MM-DD or null",
+  "amount": number or null,
+  "currency": "COP or USD or EUR or null"
+}
+If a field is not found return null.
+For amounts return only the number, no symbols, no dots, no commas.
+For dates convert to YYYY-MM-DD format even if the invoice shows DD/MM/YYYY.
+This may be a Colombian invoice or an international freight carrier invoice (Maersk, MSC, DB Schenker, Avianca Cargo, etc).`,
+                },
+              ],
+            }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 500,
+            },
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (data.error) {
+        showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+        setLoading(false);
+        return;
+      }
+
+      const text = data.candidates[0].content.parts[0].text;
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed: ScanResult = JSON.parse(clean);
+
+      onScan(parsed);
+      showToast('success', 'Factura leída correctamente');
+    } catch {
+      showToast('error', 'Error al leer la factura. Completa los campos manualmente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  return (
+    <div className="relative">
+      <div
+        onDrop={handleDrop}
+        onDragOver={e => e.preventDefault()}
+        onClick={() => inputRef.current?.click()}
+        className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
+          loading ? 'border-blue-500/50 bg-blue-500/5' : 'border-gray-600 hover:border-[#3B82F6] hover:bg-[#3B82F6]/5'
+        }`}
+      >
+        <input ref={inputRef} type="file" accept="image/*" onChange={handleChange} className="hidden" />
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <svg className="animate-spin h-5 w-5 text-[#3B82F6]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-blue-400 text-sm font-medium">Leyendo factura...</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span className="text-gray-400 text-sm">Sube o arrastra una foto de la factura</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#3B82F6]/10 text-[#3B82F6] border border-[#3B82F6]/20 ml-2">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              IA
+            </span>
+          </div>
+        )}
+      </div>
+
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-xl text-sm font-medium transition-all ${
+          toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+        }`}>
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+}
