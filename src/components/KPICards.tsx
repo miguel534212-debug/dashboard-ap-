@@ -1,4 +1,4 @@
-import { formatCOP } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 import type { KPI } from '../utils/calculations';
 
 interface KPICardsProps {
@@ -10,7 +10,7 @@ export function KPICards({ kpi }: KPICardsProps) {
     {
       title: 'Facturas Pendientes',
       value: kpi.pendingCount,
-      sub: formatCOP(kpi.pendingAmount),
+      sub: formatCurrency(kpi.pendingAmount, 'USD'),
       color: 'text-yellow-400',
       bg: 'bg-yellow-500/10',
       border: 'border-yellow-500/20',
@@ -18,14 +18,14 @@ export function KPICards({ kpi }: KPICardsProps) {
     {
       title: 'Facturas Vencidas',
       value: kpi.overdueCount,
-      sub: formatCOP(kpi.overdueAmount),
+      sub: formatCurrency(kpi.overdueAmount, 'USD'),
       color: 'text-red-400',
       bg: 'bg-red-500/10',
       border: 'border-red-500/20',
     },
     {
       title: 'Pagado Este Mes',
-      value: formatCOP(kpi.paidThisMonth),
+      value: formatCurrency(kpi.paidThisMonth, 'USD'),
       sub: '',
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',

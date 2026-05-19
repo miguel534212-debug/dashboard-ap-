@@ -1,3 +1,5 @@
+export type Currency = 'USD' | 'EUR' | 'COP';
+
 export interface Invoice {
   id: string;
   vendor: string;
@@ -5,6 +7,7 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   amount: number;
+  currency: Currency;
   category: Category;
   status: Status;
   notes: string;

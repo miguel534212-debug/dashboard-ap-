@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { Invoice, Status, Category } from '../types/invoice';
+import type { Invoice, Status, Category, Currency } from '../types/invoice';
 import { generateId } from '../utils/calculations';
 import { InvoiceScanner } from './InvoiceScanner';
 import type { ScanResult } from './InvoiceScanner';
@@ -22,6 +22,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
   const [issueDate, setIssueDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<Currency>('USD');
   const [category, setCategory] = useState<Category>('Ocean Freight');
   const [status, setStatus] = useState<Status>('Pending');
   const [notes, setNotes] = useState('');
@@ -41,6 +42,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
       setIssueDate(editingInvoice.issueDate);
       setDueDate(editingInvoice.dueDate);
       setAmount(String(editingInvoice.amount));
+      setCurrency(editingInvoice.currency);
       setCategory(editingInvoice.category);
       setStatus(editingInvoice.status);
       setNotes(editingInvoice.notes);
@@ -51,6 +53,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
       setIssueDate('');
       setDueDate('');
       setAmount('');
+      setCurrency('USD');
       setCategory('Ocean Freight');
       setStatus('Pending');
       setNotes('');
@@ -66,6 +69,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
     if (data.issueDate) { setIssueDate(data.issueDate); filled.add('issueDate'); }
     if (data.dueDate) { setDueDate(data.dueDate); filled.add('dueDate'); }
     if (data.amount) { setAmount(String(data.amount)); filled.add('amount'); }
+    if (data.currency) { setCurrency(data.currency as Currency); filled.add('currency'); }
     setScannedFields(filled);
   };
 
@@ -82,6 +86,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
       issueDate,
       dueDate,
       amount: Number(amount),
+      currency,
       category,
       status: editingInvoice?.status || (status === 'Paid' ? 'Paid' : status),
       notes,
@@ -153,20 +158,32 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, geminiApiK
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-300 text-sm font-medium mb-1">Valor (COP) *</label>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className={inputClass('amount')} min="0" step="1000" required />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <label className="block text-gray-300 text-sm font-medium mb-1">Valor *</label>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className={inputClass('amount')} min="0" step="0.01" required />
             </div>
-            {!editingInvoice && (
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-1">Moneda</label>
+              <select value={currency} onChange={e => setCurrency(e.target.value as Currency)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="COP">COP</option>
+              </select>
+            </div>
+          </div>
+
+          {!editingInvoice && (
+            <div className="grid grid-cols-2 gap-4">
+              <div></div>
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-1">Estado</label>
                 <select value={status} onChange={e => setStatus(e.target.value as Status)} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6]">
                   {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-gray-300 text-sm font-medium mb-1">Notas (opcional)</label>

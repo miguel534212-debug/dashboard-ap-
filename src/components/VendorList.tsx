@@ -1,4 +1,4 @@
-import { formatCOP } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 
 interface VendorStats {
   vendor: string;
@@ -35,7 +35,7 @@ export function VendorList({ vendors }: VendorListProps) {
               <tr key={v.vendor} className="border-b border-gray-700/30 hover:bg-white/[0.02] transition-colors">
                 <td className="px-4 py-3 text-white font-medium">{v.vendor}</td>
                 <td className="px-4 py-3 text-gray-300">{v.category}</td>
-                <td className="px-4 py-3 text-right text-gray-200 font-mono">{formatCOP(v.totalBilled)}</td>
+                <td className="px-4 py-3 text-right text-gray-200 font-mono">{formatCurrency(v.totalBilled, 'USD')}</td>
                 <td className="px-4 py-3 text-right text-gray-300">{v.invoiceCount}</td>
                 <td className={`px-4 py-3 text-right font-mono ${v.avgPaymentDelay > 0 ? 'text-yellow-400' : 'text-gray-400'}`}>
                   {v.avgPaymentDelay > 0 ? `${v.avgPaymentDelay} días` : '0 días'}

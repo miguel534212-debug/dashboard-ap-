@@ -1,4 +1,4 @@
-import { formatCOP } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 import type { AgingBucket } from '../utils/calculations';
 
 interface AgingReportProps {
@@ -23,7 +23,7 @@ export function AgingReport({ buckets }: AgingReportProps) {
                     {b.invoices.length} factura{b.invoices.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <span className="text-white font-mono font-semibold">{formatCOP(b.total)}</span>
+                <span className="text-white font-mono font-semibold">{formatCurrency(b.total, 'USD')}</span>
               </div>
               <div className="w-full bg-[#0F172A] rounded-full h-2">
                 <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: b.color }} />

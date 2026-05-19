@@ -1,6 +1,6 @@
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, BarChart } from 'recharts';
 import { useMemo } from 'react';
-import { computeTopVendors, computeMonthlySpendTrend, formatCOP } from '../utils/calculations';
+import { computeTopVendors, computeMonthlySpendTrend, formatCurrency } from '../utils/calculations';
 import type { Invoice } from '../types/invoice';
 
 interface ChartsProps {
@@ -17,7 +17,7 @@ export function Charts({ invoices }: ChartsProps) {
       <div className="bg-[#1E293B] border border-gray-600 rounded-lg px-3 py-2 text-xs shadow-xl">
         <p className="text-gray-300 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
-          <p key={i} style={{ color: p.color }} className="font-mono">{p.name}: {formatCOP(p.value)}</p>
+          <p key={i} style={{ color: p.color }} className="font-mono">{p.name}: {formatCurrency(p.value, 'USD')}</p>
         ))}
       </div>
     );

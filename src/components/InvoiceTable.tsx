@@ -1,5 +1,5 @@
 import type { Invoice, FilterState, Status } from '../types/invoice';
-import { daysOverdue, formatCOP, statusBadgeClass, categoryColor } from '../utils/calculations';
+import { daysOverdue, formatCurrency, statusBadgeClass, categoryColor } from '../utils/calculations';
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -49,7 +49,7 @@ export function InvoiceTable({ invoices, filters, onFilterChange, onEdit, onDele
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Proveedor</th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Emisión</th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Vence</th>
-              <th className="text-right px-4 py-3 text-gray-400 font-medium">Valor COP</th>
+              <th className="text-right px-4 py-3 text-gray-400 font-medium">Valor</th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Categoría</th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Estado</th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">Días vencido</th>
@@ -68,7 +68,7 @@ export function InvoiceTable({ invoices, filters, onFilterChange, onEdit, onDele
                   <td className="px-4 py-3 text-gray-300">{inv.vendor}</td>
                   <td className="px-4 py-3 text-gray-400">{inv.issueDate}</td>
                   <td className="px-4 py-3 text-gray-400">{inv.dueDate}</td>
-                  <td className="px-4 py-3 text-right text-gray-200 font-mono">{formatCOP(inv.amount)}</td>
+                  <td className="px-4 py-3 text-right text-gray-200 font-mono">{formatCurrency(inv.amount, inv.currency)}</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5 text-xs text-gray-300">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryColor(inv.category) }} />

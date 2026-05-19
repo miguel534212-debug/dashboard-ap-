@@ -1,4 +1,4 @@
-import type { Invoice, Status, Category } from '../types/invoice';
+import type { Invoice, Status, Category, Currency } from '../types/invoice';
 
 export function daysOverdue(dueDate: string): number {
   const today = new Date();
@@ -9,8 +9,14 @@ export function daysOverdue(dueDate: string): number {
   return Math.max(0, diff);
 }
 
-export function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount);
+export function formatCurrency(amount: number, currency: Currency = 'USD'): string {
+  const config: Record<Currency, { locale: string; currency: string; digits: number }> = {
+    USD: { locale: 'en-US', currency: 'USD', digits: 2 },
+    EUR: { locale: 'de-DE', currency: 'EUR', digits: 2 },
+    COP: { locale: 'es-CO', currency: 'COP', digits: 0 },
+  };
+  const c = config[currency];
+  return new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.currency, minimumFractionDigits: c.digits }).format(amount);
 }
 
 export function isOverdue(dueDate: string): boolean {
