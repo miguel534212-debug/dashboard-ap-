@@ -69,9 +69,9 @@ export function computeKPI(invoices: Invoice[]): KPI {
     .filter(i => i.status === 'Paid' && i.paidDate && i.paidDate >= monthStart)
     .reduce((s, i) => s + i.amount, 0);
 
-  const paidInvoices = invoices.filter(i => i.status === 'Paid' && i.paidDate);
+  const paidInvoices = invoices.filter(i => i.status === 'Paid' && i.paidDate && i.dueDate);
   const delays = paidInvoices.map(i => {
-    const due = new Date(i.dueDate);
+    const due = new Date(i.dueDate!);
     const paid = new Date(i.paidDate!);
     return Math.max(0, Math.floor((paid.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)));
   });
@@ -187,9 +187,9 @@ export function computeVendorStats(invoices: Invoice[]) {
   }
 
   return Array.from(grouped.entries()).map(([vendor, data]) => {
-    const paidInvs = data.invoices.filter(i => i.status === 'Paid' && i.paidDate);
+    const paidInvs = data.invoices.filter(i => i.status === 'Paid' && i.paidDate && i.dueDate);
     const delays = paidInvs.map(i => {
-      const due = new Date(i.dueDate);
+      const due = new Date(i.dueDate!);
       const paid = new Date(i.paidDate!);
       return Math.max(0, Math.floor((paid.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)));
     });

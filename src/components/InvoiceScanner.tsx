@@ -149,7 +149,7 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
       }
     }
 
-    function parseDateNear(match: RegExpMatchArray, idx: number, text: string, preferUs: boolean): string | null {
+    function parseDateNear(idx: number, text: string, preferUs: boolean): string | null {
       const after = text.slice(idx, idx + 80);
       const d = after.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
       if (!d) return null;
@@ -166,12 +166,12 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
 
     const dateLabel = text.match(/(?:date|fecha|invoice\s*date)\s*:?\s*/i);
     if (dateLabel) {
-      result.issueDate = parseDateNear(dateLabel, dateLabel.index! + dateLabel[0].length, text, true);
+      result.issueDate = parseDateNear(dateLabel.index! + dateLabel[0].length, text, true);
     }
 
     const dueLabel = text.match(/(?:due\s*date|payment\s*due|payable|fecha\s*(?:de\s*)?(?:vencimiento|pago|entrega|límite|limite)|vence\s*(?:el)?)\s*:?\s*/i);
     if (dueLabel) {
-      result.dueDate = parseDateNear(dueLabel, dueLabel.index! + dueLabel[0].length, text, true);
+      result.dueDate = parseDateNear(dueLabel.index! + dueLabel[0].length, text, true);
     }
 
     const termsMatch = text.match(/(?:payment\s*terms|terms|net)\s*:?\s*(?:NET\s*(\d+)|net\s*(\d+))/i);
