@@ -44,7 +44,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setVendor(editingInvoice.vendor);
       setInvoiceNumber(editingInvoice.invoiceNumber);
       setIssueDate(editingInvoice.issueDate);
-      setDueDate(editingInvoice.dueDate);
+      setDueDate(editingInvoice.dueDate || '');
       setAmount(String(editingInvoice.amount));
       setRawAmount(null);
       setCurrency(editingInvoice.currency);
@@ -103,7 +103,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       vendor: vendor.trim(),
       invoiceNumber,
       issueDate,
-      dueDate,
+      dueDate: dueDate || undefined,
       amount: Number(amount),
       currency,
       category,
