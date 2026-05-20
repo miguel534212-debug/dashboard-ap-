@@ -197,22 +197,42 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
       }
     }
 
-    const mblCandidates = text.match(/\b(?:MSCU|MAEU|CMAU)\d{7,12}\b/i);
-    if (mblCandidates) result.mbl = mblCandidates[0].toUpperCase();
+    const blLabel = text.match(/(?:bill\s*of\s*lading|ocean\s*bill\s*of\s*lading|house\s*bill\s*of\s*lading|b\/l|bl\s*no|master\s*bl)\s*:?\s*([A-Z][A-Z0-9]+)/i);
+    if (blLabel) {
+      result.mbl = blLabel[1].toUpperCase();
+    }
+    if (!result.mbl) {
+      const blFallback = text.match(/\b(?:HLCU|ZIMU|MSCU|MAEU|CMAU|OOLU)\d{7,12}\b/i);
+      if (blFallback) result.mbl = blFallback[0].toUpperCase();
+    }
 
-    const containerCandidates = text.match(/\b([A-Z]{4}\d{7})\b/);
+    const containerCandidates = text.match(/\b([A-Z]{4})\s*(\d{6,7})(?:[-\s]\d)?\b/i);
     if (containerCandidates) {
-      const c = containerCandidates[1];
+      const c = (containerCandidates[1] + containerCandidates[2]).toUpperCase();
       if (c !== result.mbl) result.container = c;
     }
 
-    const workOrderCandidates = text.match(/work\s*order\s*#\s*([\w\-\.\/]*)/i);
+    const workOrderCandidates = text.match(/work\s*order\s*#?\s*([\w\-\.\/]+)/i);
     if (workOrderCandidates && workOrderCandidates[1].trim()) {
       result.workOrder = workOrderCandidates[1].trim();
     }
 
+    const shipmentLabel = text.match(/(?:shipment|ship\s*ref|shipper\s*ref)\s*:?\s*([A-Z][A-Z0-9]+)/i);
+    if (shipmentLabel) {
+      result.shipment = shipmentLabel[1];
+    }
+    const orderMatch = text.match(/order\s*number\s*:?\s*(\d{4,})/i);
+    if (!result.shipment && orderMatch) {
+      result.shipment = orderMatch[1];
+    }
+    const refMatch = text.match(/consignee\s*ref\s*no\.?\s*:?\s*(\d+)/i);
+    if (!result.shipment && refMatch) {
+      result.shipment = refMatch[1];
+    }
     const schMatch = text.match(/\bSCHIIS(\d+)\b/i);
-    if (schMatch) result.shipment = schMatch[1];
+    if (!result.shipment && schMatch) {
+      result.shipment = schMatch[1];
+    }
 
     let rawAmountStr: string | null = null;
 
