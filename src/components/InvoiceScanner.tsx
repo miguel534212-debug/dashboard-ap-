@@ -182,7 +182,7 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
       }
     }
 
-    if (!result.issueDate || !result.dueDate) {
+    if (!result.issueDate) {
       const dateRegex = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
       const rawDates: { a: number; b: number; y: number }[] = [];
       let md;
@@ -191,18 +191,9 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
         if (y < 100) y += 2000;
         rawDates.push({ a, b, y });
       }
-
       const validDates = rawDates.filter(d => d.a >= 1 && d.a <= 12 && d.b >= 1 && d.b <= 31 && d.y >= 2020 && d.y <= 2030);
-      const favDates = validDates.filter(d => d.y >= 2024 && d.y <= 2027);
-
-      if (favDates.length >= 2) {
-        if (!result.issueDate) result.issueDate = `${favDates[0].y}-${String(favDates[0].a).padStart(2, '0')}-${String(favDates[0].b).padStart(2, '0')}`;
-        if (!result.dueDate) result.dueDate = `${favDates[favDates.length - 1].y}-${String(favDates[favDates.length - 1].a).padStart(2, '0')}-${String(favDates[favDates.length - 1].b).padStart(2, '0')}`;
-      } else if (validDates.length >= 2) {
-        if (!result.issueDate) result.issueDate = `${validDates[0].y}-${String(validDates[0].a).padStart(2, '0')}-${String(validDates[0].b).padStart(2, '0')}`;
-        if (!result.dueDate) result.dueDate = `${validDates[validDates.length - 1].y}-${String(validDates[validDates.length - 1].a).padStart(2, '0')}-${String(validDates[validDates.length - 1].b).padStart(2, '0')}`;
-      } else if (validDates.length === 1) {
-        if (!result.issueDate) result.issueDate = `${validDates[0].y}-${String(validDates[0].a).padStart(2, '0')}-${String(validDates[0].b).padStart(2, '0')}`;
+      if (validDates.length > 0) {
+        result.issueDate = `${validDates[0].y}-${String(validDates[0].a).padStart(2, '0')}-${String(validDates[0].b).padStart(2, '0')}`;
       }
     }
 
