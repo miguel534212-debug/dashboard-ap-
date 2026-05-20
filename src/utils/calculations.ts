@@ -1,6 +1,7 @@
 import type { Invoice, Status, Category, Currency } from '../types/invoice';
 
-export function daysOverdue(dueDate: string): number {
+export function daysOverdue(dueDate: string | undefined): number {
+  if (!dueDate) return 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(dueDate);
@@ -18,8 +19,8 @@ export function formatCurrency(amount: number, currency: Currency = 'USD'): stri
   return new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.currency, minimumFractionDigits: c.digits }).format(amount);
 }
 
-export function isOverdue(dueDate: string): boolean {
-  return daysOverdue(dueDate) > 0;
+export function isOverdue(dueDate: string | undefined): boolean {
+  return !dueDate ? false : daysOverdue(dueDate) > 0;
 }
 
 export function categoryColor(cat: Category): string {

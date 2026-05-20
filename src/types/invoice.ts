@@ -5,7 +5,7 @@ export interface Invoice {
   vendor: string;
   invoiceNumber: string;
   issueDate: string;
-  dueDate: string;
+  dueDate?: string;
   amount: number;
   currency: Currency;
   category: Category;

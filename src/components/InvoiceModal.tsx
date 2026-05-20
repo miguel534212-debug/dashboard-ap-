@@ -96,7 +96,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vendor || !invoiceNumber || !issueDate || !dueDate || !amount) return;
+    if (!vendor || !invoiceNumber || !issueDate || !amount) return;
 
     const inv: Invoice = {
       id: editingInvoice?.id || generateId(),
@@ -172,8 +172,8 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
               <input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} className={inputClass('issueDate')} required />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm font-medium mb-1">Fecha Vencimiento *</label>
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputClass('dueDate')} required />
+              <label className="block text-gray-300 text-sm font-medium mb-1">Fecha Vencimiento</label>
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputClass('dueDate')} />
             </div>
           </div>
 
