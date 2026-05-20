@@ -121,14 +121,14 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[#1E293B] border border-gray-700/50 rounded-xl w-full max-w-lg mx-4 shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700/50">
+      <div className="bg-[#1E293B] border border-gray-700/50 rounded-xl w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-700/50 shrink-0">
           <h2 className="text-white font-semibold">{editingInvoice ? 'Editar Factura' : 'Nueva Factura'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto">
           {!editingInvoice && (
             <InvoiceScanner onScan={handleScan} />
           )}
