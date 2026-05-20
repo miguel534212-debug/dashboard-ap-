@@ -7,7 +7,12 @@ export interface ScanResult {
   issueDate: string | null;
   dueDate: string | null;
   amount: number | null;
+  rawAmount: string | null;
   currency: string | null;
+  mbl: string | null;
+  container: string | null;
+  workOrder: string | null;
+  shipment: string | null;
 }
 
 interface InvoiceScannerProps {
@@ -26,6 +31,27 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
     setTimeout(() => setToast(null), 4000);
   };
 
+  function parseUsNumber(s: string): number {
+    const cleaned = s.replace(/[^\d,\.]/g, '');
+    const comma = cleaned.includes(',');
+    const dot = cleaned.includes('.');
+    if (comma && dot) {
+      const lastComma = cleaned.lastIndexOf(',');
+      const lastDot = cleaned.lastIndexOf('.');
+      if (lastComma > lastDot) return parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+      else return parseFloat(cleaned.replace(/,/g, ''));
+    }
+    if (comma) return parseFloat(cleaned.replace(',', '.'));
+    if (dot) return parseFloat(cleaned);
+    return parseInt(cleaned);
+  }
+
+  function addDays(dateStr: string, days: number): string {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   function parseInvoiceText(text: string): ScanResult {
     const lines = text.split('\n').filter(l => l.trim());
     const upper = text.toUpperCase();
@@ -36,11 +62,16 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
       issueDate: null,
       dueDate: null,
       amount: null,
+      rawAmount: null,
       currency: null,
+      mbl: null,
+      container: null,
+      workOrder: null,
+      shipment: null,
     };
 
     const invPatterns = [
-      /(?:factura|invoice|n°|nro|numero|no\.|número|número de factura|factura n°|factura no\.)\s*:?\s*([\w\-\/\.]{3,30})/i,
+      /(?:factura|invoice|inv#|invoice\s*#|n°|nro|numero|no\.|número|número de factura|factura n°|factura no\.)\s*:?\s*(?:#\s*)?([\w\-\/\.]{3,30})/i,
       /\b(\d{2,3}[-\/]\d{3,6}[-\/]\d{2,4})\b/,
     ];
     for (const p of invPatterns) {
@@ -49,28 +80,35 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
     }
 
     const knownVendors = [
-      'MAERSK', 'AVIANCA', 'DIAN', 'SERVIENTREGA', 'DEPÓSITO', 'COPA AIRLINES',
-      'DB SCHENKER', 'MSC', 'MEDITERRANEAN', 'SCHENKER', 'DHL', 'FEDEX',
-      'UPS', 'TRANSUNIVERSAL', 'TCC', 'LOGISTICA', 'TRANSPORTE',
-      'NAVIERA', 'SEABOARD', 'EVERGREEN', 'CMA CGM', 'HAPAG', 'LLOYD',
-      'YANMAR', 'PUERTO', 'ADUANAS', 'IMPORT', 'EXPORT', 'CARGA', 'F L T',
-      'FLT', 'COLOMBIA', 'BOGOTÁ', 'MEDELLÍN', 'CALI', 'BARRANQUILLA',
-      'CARTAGENA', 'BUENAVENTURA',
+      'AMZ TRUCKING', 'AMZ', 'TRUCKING', 'MAERSK', 'AVIANCA', 'DIAN',
+      'SERVIENTREGA', 'DEPÓSITO', 'COPA AIRLINES', 'DB SCHENKER', 'MSC',
+      'MEDITERRANEAN', 'SCHENKER', 'DHL', 'FEDEX', 'UPS', 'TRANSUNIVERSAL',
+      'TCC', 'LOGISTICA', 'TRANSPORTE', 'NAVIERA', 'SEABOARD', 'EVERGREEN',
+      'CMA CGM', 'HAPAG', 'LLOYD', 'YANMAR', 'PUERTO', 'ADUANAS', 'IMPORT',
+      'EXPORT', 'CARGA', 'F L T', 'FLT', 'COLOMBIA', 'BOGOTÁ', 'MEDELLÍN',
+      'CALI', 'BARRANQUILLA', 'CARTAGENA', 'BUENAVENTURA', 'TRAILER',
+      'CARRIER', 'BNSF', 'UNION PACIFIC', 'NORFOLK SOUTHERN', 'CSX',
+      'J.B. HUNT', 'SCHNEIDER', 'SWIFT', 'WERNER', 'KNIGHT', 'CRST',
     ];
     for (const v of knownVendors) {
       if (upper.includes(v)) {
         const line = lines.find(l => l.toUpperCase().includes(v));
-        if (line) {
-          result.vendor = line.trim();
-          break;
-        }
+        if (line) { result.vendor = line.trim(); break; }
+      }
+    }
+
+    if (!result.vendor) {
+      const m = text.match(/(?:invoice|factura)\s*(?:#|n°|nro|no\.)?\s*\w+\s+([A-Z][A-Z\s\.]+?)(?:\s+\d|\s+[A-Z]|\s*$)/i);
+      if (m) {
+        const v = m[1].trim();
+        if (v.length >= 3 && v.length <= 60 && !v.match(/^\d/)) result.vendor = v;
       }
     }
 
     const labelPatterns = [
-      /(?:proveedor|vendor|empresa|cliente|razón social|razon social|nombre|nombre del proveedor|contratista|prestador)\s*:?\s*([^\n]{2,80})/i,
-      /(?:facturado por|emitido por|expedido por)\s*:?\s*([^\n]{2,80})/i,
-      /(?:remitente|consignatario|destinatario|destino)\s*:?\s*([^\n]{2,80})/i,
+      /(?:proveedor|vendor|empresa|cliente|razón social|razon social|nombre|nombre del proveedor|contratista|prestador|carrier)\s*:?\s*([^\n]{2,80})/i,
+      /(?:facturado por|emitido por|expedido por|bill\s*to)\s*:?\s*([^\n]{2,80})/i,
+      /(?:remitente|consignatario|destinatario|destino|shipper)\s*:?\s*([^\n]{2,80})/i,
     ];
     if (!result.vendor) {
       for (const p of labelPatterns) {
@@ -87,84 +125,136 @@ export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
       for (const line of headerCandidates) {
         const cleaned = line.replace(/[\(\)\[\]\{\}]/g, '').trim();
         if (
-          cleaned.length >= 4 &&
-          cleaned.length <= 80 &&
+          cleaned.length >= 4 && cleaned.length <= 80 &&
           !cleaned.match(/^\d/) &&
           !cleaned.match(/^(factura|invoice|n°|nro|recibo|comprobante|fecha|fecha de emisión|nit|rut|dirección|teléfono|total|subtotal|iva|pagina|página|www|http)/i)
         ) {
-          result.vendor = cleaned;
-          break;
+          result.vendor = cleaned; break;
         }
       }
     }
 
+    if (!result.vendor) {
+      const invLine = text.match(/invoice\s*#\s*\d+\s+([A-Z][A-Z\s\.]{2,50})/i);
+      if (invLine) {
+        const v = invLine[1].trim();
+        if (v.length >= 3) result.vendor = v;
+      }
+    }
+
     if (!result.vendor && lines.length > 0) {
-      result.vendor = lines[0].replace(/[\(\)\[\]\{\}]/g, '').trim();
+      const firstLine = lines[0].replace(/[\(\)\[\]\{\}]/g, '').trim();
+      if (firstLine.length <= 80 && !firstLine.match(/^(bill\s*to|to:|invoice|date|fecha)/i)) {
+        result.vendor = firstLine;
+      }
     }
 
-    const dateRegex = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
-    const dates: { d: number; m: number; y: number; raw: string }[] = [];
-    let m;
-    while ((m = dateRegex.exec(text)) !== null) {
-      let d = parseInt(m[1]), mo = parseInt(m[2]), y = parseInt(m[3]);
+    function parseDateNear(match: RegExpMatchArray, idx: number, text: string, preferUs: boolean): string | null {
+      const after = text.slice(idx, idx + 80);
+      const d = after.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+      if (!d) return null;
+      let a = parseInt(d[1]), b = parseInt(d[2]), y = parseInt(d[3]);
       if (y < 100) y += 2000;
-      if (d > 31) { [d, mo] = [mo, d]; }
-      dates.push({ d, m: mo, y, raw: m[0] });
+      if (preferUs) {
+        if (a <= 12 && b <= 31) return `${y}-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`;
+        return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+      }
+      if (a > 31) { [a, b] = [b, a]; }
+      if (b > 12) { [a, b] = [b, a]; }
+      return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
     }
 
-    if (upper.includes('VENCE') || upper.includes('VENCIMIENTO') || upper.includes('DUE DATE') || upper.includes('FECHA DE PAGO')) {
-      result.dueDate = dates.length > 1
-        ? `${dates[dates.length - 1].y}-${String(dates[dates.length - 1].m).padStart(2, '0')}-${String(dates[dates.length - 1].d).padStart(2, '0')}`
-        : dates.length > 0
-        ? `${dates[dates.length - 1].y}-${String(dates[dates.length - 1].m).padStart(2, '0')}-${String(dates[dates.length - 1].d).padStart(2, '0')}`
-        : null;
-      result.issueDate = dates.length > 1
-        ? `${dates[0].y}-${String(dates[0].m).padStart(2, '0')}-${String(dates[0].d).padStart(2, '0')}`
-        : null;
-    } else if (dates.length >= 2) {
-      result.issueDate = `${dates[0].y}-${String(dates[0].m).padStart(2, '0')}-${String(dates[0].d).padStart(2, '0')}`;
-      result.dueDate = `${dates[dates.length - 1].y}-${String(dates[dates.length - 1].m).padStart(2, '0')}-${String(dates[dates.length - 1].d).padStart(2, '0')}`;
-    } else if (dates.length === 1) {
-      result.issueDate = `${dates[0].y}-${String(dates[0].m).padStart(2, '0')}-${String(dates[0].d).padStart(2, '0')}`;
+    const dateLabel = text.match(/(?:date|fecha|invoice\s*date)\s*:?\s*/i);
+    if (dateLabel) {
+      result.issueDate = parseDateNear(dateLabel, dateLabel.index! + dateLabel[0].length, text, true);
     }
 
-    const amounts: { val: number; raw: string; line: string }[] = [];
-    const totalPattern = /(?:total\s*(?:general|a\s*pagar|pagado|neto)?|valor\s*total|neto\s*a\s*pagar|suma|importe\s*total|amount|balance\s*due|total\s*due|pagar|subtotal)\s*:?\s*([\$\€\s]*[\d,\.\s]+)/gi;
+    const dueLabel = text.match(/(?:due\s*date|payment\s*due|payable|fecha\s*(?:de\s*)?(?:vencimiento|pago|entrega|límite|limite)|vence\s*(?:el)?)\s*:?\s*/i);
+    if (dueLabel) {
+      result.dueDate = parseDateNear(dueLabel, dueLabel.index! + dueLabel[0].length, text, true);
+    }
+
+    const termsMatch = text.match(/(?:payment\s*terms|terms|net)\s*:?\s*(?:NET\s*(\d+)|net\s*(\d+))/i);
+    if (!result.dueDate && result.issueDate && termsMatch) {
+      const netDays = parseInt(termsMatch[1] || termsMatch[2]);
+      if (!isNaN(netDays) && netDays > 0) {
+        result.dueDate = addDays(result.issueDate, netDays);
+      }
+    }
+
+    if (!result.issueDate || !result.dueDate) {
+      const dateRegex = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
+      const rawDates: { a: number; b: number; y: number }[] = [];
+      let md;
+      while ((md = dateRegex.exec(text)) !== null) {
+        let a = parseInt(md[1]), b = parseInt(md[2]), y = parseInt(md[3]);
+        if (y < 100) y += 2000;
+        rawDates.push({ a, b, y });
+      }
+
+      const validDates = rawDates.filter(d => d.a >= 1 && d.a <= 12 && d.b >= 1 && d.b <= 31 && d.y >= 2020 && d.y <= 2030);
+      const favDates = validDates.filter(d => d.y >= 2024 && d.y <= 2027);
+
+      if (favDates.length >= 2) {
+        if (!result.issueDate) result.issueDate = `${favDates[0].y}-${String(favDates[0].a).padStart(2, '0')}-${String(favDates[0].b).padStart(2, '0')}`;
+        if (!result.dueDate) result.dueDate = `${favDates[favDates.length - 1].y}-${String(favDates[favDates.length - 1].a).padStart(2, '0')}-${String(favDates[favDates.length - 1].b).padStart(2, '0')}`;
+      } else if (validDates.length >= 2) {
+        if (!result.issueDate) result.issueDate = `${validDates[0].y}-${String(validDates[0].a).padStart(2, '0')}-${String(validDates[0].b).padStart(2, '0')}`;
+        if (!result.dueDate) result.dueDate = `${validDates[validDates.length - 1].y}-${String(validDates[validDates.length - 1].a).padStart(2, '0')}-${String(validDates[validDates.length - 1].b).padStart(2, '0')}`;
+      } else if (validDates.length === 1) {
+        if (!result.issueDate) result.issueDate = `${validDates[0].y}-${String(validDates[0].a).padStart(2, '0')}-${String(validDates[0].b).padStart(2, '0')}`;
+      }
+    }
+
+    const mblCandidates = text.match(/\b(?:MSCU|MAEU|CMAU)\d{7,12}\b/i);
+    if (mblCandidates) result.mbl = mblCandidates[0].toUpperCase();
+
+    const containerCandidates = text.match(/\b([A-Z]{4}\d{7})\b/);
+    if (containerCandidates) {
+      const c = containerCandidates[1];
+      if (c !== result.mbl) result.container = c;
+    }
+
+    const workOrderCandidates = text.match(/work\s*order\s*#\s*([\w\-\.\/]*)/i);
+    if (workOrderCandidates && workOrderCandidates[1].trim()) {
+      result.workOrder = workOrderCandidates[1].trim();
+    }
+
+    const schMatch = text.match(/\bSCHIIS(\d+)\b/i);
+    if (schMatch) result.shipment = schMatch[1];
+
+    let rawAmountStr: string | null = null;
+
+    const totalPattern = /(?:total\s*(?:general|a\s*pagar|pagado|neto|due)?|valor\s*total|neto\s*a\s*pagar|suma|importe\s*total|amount|balance\s*due|total\s*due|pagar|subtotal|amount\s*due)\s*:?\s*\$?\s*([\d,\.\s]+)/gi;
+    const amounts: { val: number; raw: string }[] = [];
     for (const ap of text.matchAll(totalPattern)) {
-      const cleaned = ap[1].replace(/[^\d,\.]/g, '');
-      if (cleaned) amounts.push({ val: parseFloat(cleaned.replace(/,/g, '.')), raw: cleaned, line: ap[0] });
+      const raw = ap[1].trim();
+      if (raw) {
+        amounts.push({ val: parseUsNumber(raw), raw });
+      }
     }
+
     const allNums = text.match(/\$?\s*[\d,]{1,3}(?:[\.\,]\d{3})*(?:[\.\,]\d{2})?/g) || [];
     const parsed = allNums.map(a => {
-      const n = a.replace(/[^\d,\.]/g, '');
-      const hasComma = n.includes(',');
-      const hasDot = n.includes('.');
-      let v: number;
-      if (hasComma && !hasDot) {
-        const parts = n.split(',');
-        v = parts.length === 2 && parts[1].length <= 2
-          ? parseFloat(n.replace(',', '.'))
-          : parseInt(n.replace(/,/g, ''));
-      } else if (hasDot && !hasComma) {
-        const parts = n.split('.');
-        v = parts.length >= 3 ? parseInt(n.replace(/\./g, ''))
-          : parts.length === 2 && parts[1].length <= 2 ? parseFloat(n)
-          : parseInt(n);
-      } else {
-        v = parseInt(n.replace(/[^\d]/g, ''));
-      }
-      return { v: isNaN(v) ? 0 : v, raw: a };
+      const v = parseUsNumber(a);
+      return { v: isNaN(v) ? 0 : v, raw: a.trim() };
     }).filter(x => x.v > 0);
 
     if (amounts.length > 0) {
       const maxLabel = amounts.reduce((a, b) => a.val > b.val ? a : b);
       result.amount = maxLabel.val;
+      rawAmountStr = maxLabel.raw;
     } else if (parsed.length > 0) {
       const max = parsed.reduce((a, b) => a.v > b.v ? a : b);
       result.amount = max.v;
+      rawAmountStr = max.raw;
     }
 
-    const amountLine = result.amount ? text.split('\n').find(l => l.includes(String(result.amount))) || '' : '';
+    if (rawAmountStr && result.amount) {
+      result.rawAmount = `$${rawAmountStr}`;
+    }
+
+    const amountLine = result.amount ? text.split('\n').find(l => l.includes(rawAmountStr || String(result.amount))) || '' : '';
     const amountUpper = amountLine.toUpperCase();
     if (amountUpper.includes('EUR') || amountUpper.includes('€')) result.currency = 'EUR';
     else result.currency = 'USD';

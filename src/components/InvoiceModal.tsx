@@ -21,10 +21,15 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   const [issueDate, setIssueDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [amount, setAmount] = useState('');
+  const [rawAmount, setRawAmount] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [category, setCategory] = useState<Category>('Ocean Freight');
   const [status, setStatus] = useState<Status>('Pending');
   const [notes, setNotes] = useState('');
+  const [mbl, setMbl] = useState('');
+  const [container, setContainer] = useState('');
+  const [workOrder, setWorkOrder] = useState('');
+  const [shipment, setShipment] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [scannedFields, setScannedFields] = useState<Set<string>>(new Set());
@@ -41,22 +46,32 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setIssueDate(editingInvoice.issueDate);
       setDueDate(editingInvoice.dueDate);
       setAmount(String(editingInvoice.amount));
+      setRawAmount(null);
       setCurrency(editingInvoice.currency);
       setCategory(editingInvoice.category);
       setStatus(editingInvoice.status);
       setNotes(editingInvoice.notes);
       setVendorSearch(editingInvoice.vendor);
+      setMbl(editingInvoice.notes?.includes('MBL:') ? editingInvoice.notes.split('MBL:')[1]?.split(' ')[0] || '' : '');
+      setContainer('');
+      setWorkOrder('');
+      setShipment('');
     } else {
       setVendor('');
       setInvoiceNumber('');
       setIssueDate('');
       setDueDate('');
       setAmount('');
+      setRawAmount(null);
       setCurrency('USD');
       setCategory('Ocean Freight');
       setStatus('Pending');
       setNotes('');
       setVendorSearch('');
+      setMbl('');
+      setContainer('');
+      setWorkOrder('');
+      setShipment('');
     }
     setScannedFields(new Set());
   }, [editingInvoice, open]);
@@ -68,7 +83,12 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
     if (data.issueDate) { setIssueDate(data.issueDate); filled.add('issueDate'); }
     if (data.dueDate) { setDueDate(data.dueDate); filled.add('dueDate'); }
     if (data.amount) { setAmount(String(data.amount)); filled.add('amount'); }
+    if (data.rawAmount) { setRawAmount(data.rawAmount); }
     if (data.currency) { setCurrency(data.currency as Currency); filled.add('currency'); }
+    if (data.mbl) { setMbl(data.mbl); filled.add('mbl'); }
+    if (data.container) { setContainer(data.container); filled.add('container'); }
+    if (data.workOrder) { setWorkOrder(data.workOrder); filled.add('workOrder'); }
+    if (data.shipment) { setShipment(data.shipment); filled.add('shipment'); }
     setScannedFields(filled);
   };
 
@@ -168,6 +188,35 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
               </select>
+            </div>
+          </div>
+
+          {rawAmount && !editingInvoice && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#3B82F6]/5 border border-[#3B82F6]/20 rounded-lg">
+              <svg className="w-4 h-4 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span className="text-gray-300 text-xs">Monto escaneado: <span className="text-white font-mono">{rawAmount}</span></span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-1">MBL</label>
+              <input type="text" value={mbl} onChange={e => setMbl(e.target.value)} className={inputClass('mbl')} placeholder="Master BL" />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-1">Container</label>
+              <input type="text" value={container} onChange={e => setContainer(e.target.value)} className={inputClass('container')} placeholder="N° contenedor" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-1">Work Order</label>
+              <input type="text" value={workOrder} onChange={e => setWorkOrder(e.target.value)} className={inputClass('workOrder')} placeholder="WO #" />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-1">Shipment</label>
+              <input type="text" value={shipment} onChange={e => setShipment(e.target.value)} className={inputClass('shipment')} placeholder="N° embarque" />
             </div>
           </div>
 
