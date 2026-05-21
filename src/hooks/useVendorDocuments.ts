@@ -37,9 +37,10 @@ export function useVendorDocuments() {
   const groupedByVendor = useCallback(() => {
     const grouped = new Map<string, VendorDocument[]>();
     for (const doc of documents) {
-      const list = grouped.get(doc.vendor) || [];
+      const v = doc.vendor || 'Sin proveedor';
+      const list = grouped.get(v) || [];
       list.push(doc);
-      grouped.set(doc.vendor, list);
+      grouped.set(v, list);
     }
     return Array.from(grouped.entries())
       .map(([vendor, docs]) => ({ vendor, docs }))

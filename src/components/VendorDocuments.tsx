@@ -50,13 +50,14 @@ export function VendorDocuments({ documents, onAdd, onDelete }: VendorDocumentsP
   const grouped = useMemo(() => {
     const map = new Map<string, VendorDocument[]>();
     for (const doc of documents) {
-      const list = map.get(doc.vendor) || [];
+      const v = doc.vendor || 'Sin proveedor';
+      const list = map.get(v) || [];
       list.push(doc);
-      map.set(doc.vendor, list);
+      map.set(v, list);
     }
     return Array.from(map.entries())
-      .map(([vendor, docs]) => ({ vendor, docs: docs.sort((a, b) => b.uploadDate.localeCompare(a.uploadDate)) }))
-      .sort((a, b) => a.vendor.localeCompare(b.vendor));
+      .map(([vendor, docs]) => ({ vendor, docs: docs.sort((a, b) => (b.uploadDate || '').localeCompare(a.uploadDate || '')) }))
+      .sort((a, b) => (a.vendor || '').localeCompare(b.vendor || ''));
   }, [documents]);
 
   const filtered = useMemo(() => {
