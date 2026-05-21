@@ -46,6 +46,11 @@ function loadInvoices(): Invoice[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed: Invoice[] = JSON.parse(stored);
+      const hasEnglishStatus = parsed.some(inv => ['Pending', 'Approved', 'Paid', 'Overdue'].includes(inv.status));
+      if (hasEnglishStatus) {
+        localStorage.removeItem(STORAGE_KEY);
+        return seedInvoices;
+      }
       return parsed.map(inv => ({
         ...inv,
         lastUpdatedBy: inv.lastUpdatedBy || '',

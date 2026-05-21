@@ -120,7 +120,12 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       pdfName: pdfName || undefined,
       lastUpdatedBy: editingInvoice?.lastUpdatedBy || '',
       disputeReason: editingInvoice?.disputeReason || null,
-      statusHistory: editingInvoice?.statusHistory || [],
+      statusHistory: editingInvoice?.statusHistory || [{
+        status: editingInvoice?.status || (status === 'Pagada' ? 'Pagada' : status),
+        date: new Date().toISOString(),
+        updatedBy: editingInvoice?.lastUpdatedBy || 'Sistema',
+        note: notes || 'Factura creada',
+      }],
     };
     onSave(inv);
   };
@@ -137,6 +142,19 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   };
 
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const openPdf = (base64: string) => {
+    try {
+      const byteCharacters = atob(base64.split(',')[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {}
+  };
 
   const inputClass = (field: string) =>
     `w-full bg-[#0F172A] border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 ${
@@ -267,7 +285,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
               <div className="flex items-center justify-between bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <svg className="w-4 h-4 shrink-0 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                  <a href={pdfAttachment} target="_blank" rel="noopener noreferrer" className="text-sm text-[#3B82F6] hover:underline truncate">{pdfName}</a>
+                  <button type="button" onClick={() => openPdf(pdfAttachment)} className="text-sm text-[#3B82F6] hover:underline truncate text-left">{pdfName}</button>
                 </div>
                 <button type="button" onClick={() => { setPdfAttachment(''); setPdfName(''); }} className="p-1 text-gray-500 hover:text-red-400 shrink-0 ml-2" title="Quitar PDF">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
