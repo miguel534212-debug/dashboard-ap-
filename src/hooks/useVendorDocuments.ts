@@ -7,7 +7,10 @@ const STORAGE_KEY = 'boc-ap-vendor-docs';
 function loadDocuments(): VendorDocument[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed;
+    }
   } catch {}
   return [];
 }
