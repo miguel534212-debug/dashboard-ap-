@@ -35,6 +35,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   const [vendorSearch, setVendorSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [scannedFields, setScannedFields] = useState<Set<string>>(new Set());
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const filteredVendors = useMemo(() => {
     if (!vendorSearch) return existingVendors;
@@ -140,8 +141,6 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
     };
     reader.readAsDataURL(file);
   };
-
-  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const openPdf = (base64: string) => {
     try {
