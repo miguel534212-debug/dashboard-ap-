@@ -53,12 +53,13 @@ export function InvoiceTable({ invoices, filters, onFilterChange, onEdit, onDele
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Categoría</th>
               <th className="text-left px-4 py-3 text-gray-400 font-medium">Estado</th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">Días vencido</th>
+              <th className="text-center px-4 py-3 text-gray-400 font-medium">PDF</th>
               <th className="text-right px-4 py-3 text-gray-400 font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {invoices.length === 0 && (
-              <tr><td colSpan={9} className="text-center py-8 text-gray-500">No hay facturas que coincidan con los filtros</td></tr>
+              <tr><td colSpan={10} className="text-center py-8 text-gray-500">No hay facturas que coincidan con los filtros</td></tr>
             )}
             {invoices.map(inv => {
               const days = daysOverdue(inv.dueDate);
@@ -82,6 +83,15 @@ export function InvoiceTable({ invoices, filters, onFilterChange, onEdit, onDele
                   </td>
                   <td className={`px-4 py-3 text-right font-mono ${days > 0 ? 'text-red-400' : 'text-gray-500'}`}>
                     {days > 0 ? `${days}d` : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {inv.pdfAttachment ? (
+                      <a href={inv.pdfAttachment} target="_blank" rel="noopener noreferrer" title={inv.pdfName || 'Ver PDF'} className="inline-flex items-center justify-center p-1.5 text-gray-500 hover:text-[#3B82F6] transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                      </a>
+                    ) : (
+                      <span className="text-gray-600">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">

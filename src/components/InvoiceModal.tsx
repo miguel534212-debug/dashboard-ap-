@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Invoice, Status, Category, Currency } from '../types/invoice';
 import { generateId } from '../utils/calculations';
 import { InvoiceScanner } from './InvoiceScanner';
@@ -30,6 +30,8 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   const [container, setContainer] = useState('');
   const [workOrder, setWorkOrder] = useState('');
   const [shipment, setShipment] = useState('');
+  const [pdfAttachment, setPdfAttachment] = useState<string>('');
+  const [pdfName, setPdfName] = useState('');
   const [vendorSearch, setVendorSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [scannedFields, setScannedFields] = useState<Set<string>>(new Set());
@@ -56,6 +58,8 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setContainer('');
       setWorkOrder('');
       setShipment('');
+      setPdfAttachment(editingInvoice.pdfAttachment || '');
+      setPdfName(editingInvoice.pdfName || '');
     } else {
       setVendor('');
       setInvoiceNumber('');
@@ -72,6 +76,8 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setContainer('');
       setWorkOrder('');
       setShipment('');
+      setPdfAttachment('');
+      setPdfName('');
     }
     setScannedFields(new Set());
   }, [editingInvoice, open]);
@@ -110,9 +116,24 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       status: editingInvoice?.status || (status === 'Paid' ? 'Paid' : status),
       notes,
       paidDate: status === 'Paid' ? new Date().toISOString().slice(0, 10) : editingInvoice?.paidDate,
+      pdfAttachment: pdfAttachment || undefined,
+      pdfName: pdfName || undefined,
     };
     onSave(inv);
   };
+
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPdfAttachment(reader.result as string);
+      setPdfName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const inputClass = (field: string) =>
     `w-full bg-[#0F172A] border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 ${
@@ -235,6 +256,26 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
           <div>
             <label className="block text-gray-300 text-sm font-medium mb-1">Notas (opcional)</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#3B82F6] placeholder-gray-500 resize-none" placeholder="Observaciones..." />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-1">PDF Adjunto</label>
+            {pdfAttachment ? (
+              <div className="flex items-center justify-between bg-[#0F172A] border border-gray-600 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <svg className="w-4 h-4 shrink-0 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  <a href={pdfAttachment} target="_blank" rel="noopener noreferrer" className="text-sm text-[#3B82F6] hover:underline truncate">{pdfName}</a>
+                </div>
+                <button type="button" onClick={() => { setPdfAttachment(''); setPdfName(''); }} className="p-1 text-gray-500 hover:text-red-400 shrink-0 ml-2" title="Quitar PDF">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ) : (
+              <div onClick={() => pdfInputRef.current?.click()} className="border border-dashed border-gray-600 rounded-lg px-3 py-2 text-center cursor-pointer hover:border-[#3B82F6] transition-colors">
+                <input ref={pdfInputRef} type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" />
+                <span className="text-gray-500 text-sm">Adjuntar PDF</span>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

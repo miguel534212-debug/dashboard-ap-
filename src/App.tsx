@@ -7,7 +7,9 @@ import { SettingsModal } from './components/SettingsModal';
 import { AgingReport } from './components/AgingReport';
 import { Charts } from './components/Charts';
 import { VendorList } from './components/VendorList';
+import { VendorDocuments } from './components/VendorDocuments';
 import { useInvoices } from './hooks/useInvoices';
+import { useVendorDocuments } from './hooks/useVendorDocuments';
 import { computeKPI, computeAging, computeVendorStats } from './utils/calculations';
 import type { View, Invoice } from './types/invoice';
 
@@ -20,6 +22,8 @@ export default function App() {
     showModal, setShowModal, editingInvoice, setEditingInvoice,
     addInvoice, updateInvoice, deleteInvoice, markStatus,
   } = useInvoices();
+
+  const vendorDocs = useVendorDocuments();
 
   const kpi = useMemo(() => computeKPI(invoices), [invoices]);
   const agingBuckets = useMemo(() => computeAging(invoices), [invoices]);
@@ -92,6 +96,14 @@ export default function App() {
               </div>
               <VendorList vendors={vendorStats} />
             </div>
+          )}
+
+          {currentView === 'documents' && (
+            <VendorDocuments
+              documents={vendorDocs.documents}
+              onAdd={vendorDocs.addDocument}
+              onDelete={vendorDocs.deleteDocument}
+            />
           )}
         </div>
       </main>
