@@ -41,17 +41,39 @@ const seedInvoices: Invoice[] = [
   seedInvoice({ id: '20', vendor: 'DIAN Aduanas', invoiceNumber: 'DIAN-2024-047', issueDate: '2026-05-08', dueDate: '2026-06-08', amount: 1025, category: 'Customs', status: 'Pendiente', notes: 'Trámite aduanero importación' }),
 ];
 
+const VALID_STATUSES: readonly string[] = ['Pendiente', 'Aprobada', 'Pagada', 'Vencida', 'En Disputa', 'Esperando Soporte'];
+
+function isValidInvoice(obj: unknown): obj is Invoice {
+  if (!obj || typeof obj !== 'object') return false;
+  const inv = obj as Record<string, unknown>;
+  return (
+    typeof inv.id === 'string' &&
+    typeof inv.vendor === 'string' &&
+    typeof inv.invoiceNumber === 'string' &&
+    typeof inv.issueDate === 'string' &&
+    (typeof inv.amount === 'number') &&
+    VALID_STATUSES.includes(String(inv.status))
+  );
+}
+
 function loadInvoices(): Invoice[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed: Invoice[] = JSON.parse(stored);
-      const hasEnglishStatus = parsed.some(inv => ['Pending', 'Approved', 'Paid', 'Overdue'].includes(inv.status));
+      const parsed: unknown[] = JSON.parse(stored);
+      if (!Array.isArray(parsed)) throw new Error('not an array');
+      const hasEnglishStatus = parsed.some(inv =>
+        ['Pending', 'Approved', 'Paid', 'Overdue'].includes((inv as Record<string, unknown>)?.status as string)
+      );
       if (hasEnglishStatus) {
         localStorage.removeItem(STORAGE_KEY);
         return seedInvoices;
       }
-      return parsed.map(inv => ({
+      if (!parsed.every(isValidInvoice)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return seedInvoices;
+      }
+      return (parsed as Invoice[]).map(inv => ({
         ...inv,
         lastUpdatedBy: inv.lastUpdatedBy || '',
         disputeReason: inv.disputeReason ?? null,

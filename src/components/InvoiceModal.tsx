@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Invoice, Status, Category, Currency } from '../types/invoice';
 import { generateId } from '../utils/calculations';
 import { InvoiceScanner } from './InvoiceScanner';
-import type { ScanResult } from './InvoiceScanner';
+import type { ScanResult } from '../utils/ocr';
 
 interface InvoiceModalProps {
   open: boolean;

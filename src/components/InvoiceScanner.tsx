@@ -6,8 +6,6 @@ interface InvoiceScannerProps {
   onScan: (data: ScanResult) => void;
 }
 
-export { type ScanResult };
-
 export function InvoiceScanner({ onScan }: InvoiceScannerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
