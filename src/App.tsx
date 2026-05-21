@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { KPICards } from './components/KPICards';
 import { InvoiceTable } from './components/InvoiceTable';
 import { InvoiceModal } from './components/InvoiceModal';
+import { InvoiceDetailPanel } from './components/InvoiceDetailPanel';
 import { SettingsModal } from './components/SettingsModal';
 import { AgingReport } from './components/AgingReport';
 import { Charts } from './components/Charts';
@@ -21,6 +22,7 @@ export default function App() {
     invoices, filteredInvoices, filters, setFilters,
     showModal, setShowModal, editingInvoice, setEditingInvoice,
     addInvoice, updateInvoice, deleteInvoice, markStatus,
+    addActivity, setDetailInvoiceId, detailInvoice,
   } = useInvoices();
 
   const vendorDocs = useVendorDocuments();
@@ -45,6 +47,19 @@ export default function App() {
   const handleAdd = () => {
     setEditingInvoice(null);
     setShowModal(true);
+  };
+
+  const handleSelectInvoice = (inv: Invoice) => {
+    setDetailInvoiceId(inv.id);
+  };
+
+  const handleReuploadPdf = (id: string) => {
+    const inv = invoices.find(i => i.id === id);
+    if (inv) {
+      setDetailInvoiceId(null);
+      setEditingInvoice(inv);
+      setShowModal(true);
+    }
   };
 
   return (
@@ -76,6 +91,7 @@ export default function App() {
                 onDelete={deleteInvoice}
                 onMarkStatus={markStatus}
                 onAdd={handleAdd}
+                onSelectInvoice={handleSelectInvoice}
               />
             </div>
           )}
@@ -114,6 +130,13 @@ export default function App() {
         existingVendors={existingVendors}
         onClose={() => { setShowModal(false); setEditingInvoice(null); }}
         onSave={handleSave}
+      />
+
+      <InvoiceDetailPanel
+        invoice={detailInvoice}
+        onClose={() => setDetailInvoiceId(null)}
+        onAddActivity={addActivity}
+        onReuploadPdf={handleReuploadPdf}
       />
 
       <SettingsModal

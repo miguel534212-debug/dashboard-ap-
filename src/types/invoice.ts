@@ -1,5 +1,12 @@
 export type Currency = 'USD' | 'EUR';
 
+export interface StatusHistoryEntry {
+  status: Status;
+  date: string;
+  updatedBy: string;
+  note: string;
+}
+
 export interface Invoice {
   id: string;
   vendor: string;
@@ -14,6 +21,9 @@ export interface Invoice {
   paidDate?: string;
   pdfAttachment?: string;
   pdfName?: string;
+  lastUpdatedBy: string;
+  disputeReason: string | null;
+  statusHistory: StatusHistoryEntry[];
 }
 
 export interface VendorDocument {
@@ -24,7 +34,7 @@ export interface VendorDocument {
   uploadDate: string;
 }
 
-export type Status = 'Pending' | 'Approved' | 'Paid' | 'Overdue';
+export type Status = 'Pendiente' | 'Aprobada' | 'Pagada' | 'Vencida' | 'En Disputa' | 'Esperando Soporte';
 export type Category = 'Ocean Freight' | 'Air Freight' | 'Customs' | 'Trucking' | 'Storage' | 'Other';
 
 export type View = 'dashboard' | 'invoices' | 'aging' | 'vendors' | 'documents';

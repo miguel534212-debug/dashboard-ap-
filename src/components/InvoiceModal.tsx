@@ -13,7 +13,7 @@ interface InvoiceModalProps {
 }
 
 const categories: Category[] = ['Ocean Freight', 'Air Freight', 'Customs', 'Trucking', 'Storage', 'Other'];
-const statuses: Status[] = ['Pending', 'Approved', 'Paid'];
+const statuses: Status[] = ['Pendiente', 'Aprobada', 'Pagada'];
 
 export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, onSave }: InvoiceModalProps) {
   const [vendor, setVendor] = useState('');
@@ -24,7 +24,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
   const [rawAmount, setRawAmount] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [category, setCategory] = useState<Category>('Ocean Freight');
-  const [status, setStatus] = useState<Status>('Pending');
+  const [status, setStatus] = useState<Status>('Pendiente');
   const [notes, setNotes] = useState('');
   const [mbl, setMbl] = useState('');
   const [container, setContainer] = useState('');
@@ -69,7 +69,7 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       setRawAmount(null);
       setCurrency('USD');
       setCategory('Ocean Freight');
-      setStatus('Pending');
+      setStatus('Pendiente');
       setNotes('');
       setVendorSearch('');
       setMbl('');
@@ -113,11 +113,14 @@ export function InvoiceModal({ open, editingInvoice, existingVendors, onClose, o
       amount: Number(amount),
       currency,
       category,
-      status: editingInvoice?.status || (status === 'Paid' ? 'Paid' : status),
+      status: editingInvoice?.status || (status === 'Pagada' ? 'Pagada' : status),
       notes,
-      paidDate: status === 'Paid' ? new Date().toISOString().slice(0, 10) : editingInvoice?.paidDate,
+      paidDate: status === 'Pagada' ? new Date().toISOString().slice(0, 10) : editingInvoice?.paidDate,
       pdfAttachment: pdfAttachment || undefined,
       pdfName: pdfName || undefined,
+      lastUpdatedBy: editingInvoice?.lastUpdatedBy || '',
+      disputeReason: editingInvoice?.disputeReason || null,
+      statusHistory: editingInvoice?.statusHistory || [],
     };
     onSave(inv);
   };
