@@ -5,6 +5,7 @@ import { InvoiceTable } from './components/InvoiceTable';
 import { InvoiceModal } from './components/InvoiceModal';
 import { InvoiceDetailPanel } from './components/InvoiceDetailPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { ExcelImportModal } from './components/ExcelImportModal';
 import { AgingReport } from './components/AgingReport';
 import { Charts } from './components/Charts';
 import { VendorList } from './components/VendorList';
@@ -13,10 +14,13 @@ import { useInvoices } from './hooks/useInvoices';
 import { useVendorDocuments } from './hooks/useVendorDocuments';
 import { computeKPI, computeAging, computeVendorStats } from './utils/calculations';
 import type { View, Invoice } from './types/invoice';
+import { applyImportActions } from './utils/excelImport';
+import type { ImportAction } from './utils/excelImport';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [showSettings, setShowSettings] = useState(false);
+  const [showImportExcel, setShowImportExcel] = useState(false);
 
   const {
     invoices, filteredInvoices, filters, setFilters,
@@ -62,6 +66,11 @@ export default function App() {
     }
   };
 
+  const handleApplyImport = (actions: ImportAction[], selected: Set<number>) => {
+    applyImportActions(actions, selected, invoices, addInvoice, updateInvoice);
+    setShowImportExcel(false);
+  };
+
   return (
     <div className="flex h-screen bg-[#0F172A]">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} onSettingsClick={() => setShowSettings(true)} />
@@ -92,6 +101,7 @@ export default function App() {
                 onMarkStatus={markStatus}
                 onAdd={handleAdd}
                 onSelectInvoice={handleSelectInvoice}
+                onImportExcel={() => setShowImportExcel(true)}
               />
             </div>
           )}
@@ -137,6 +147,13 @@ export default function App() {
         onClose={() => setDetailInvoiceId(null)}
         onAddActivity={addActivity}
         onReuploadPdf={handleReuploadPdf}
+      />
+
+      <ExcelImportModal
+        open={showImportExcel}
+        invoices={invoices}
+        onClose={() => setShowImportExcel(false)}
+        onApply={handleApplyImport}
       />
 
       <SettingsModal
